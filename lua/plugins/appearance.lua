@@ -219,42 +219,6 @@ local lualine_new = {
 	event = "VeryLazy",
 	dependencies = { "echasnovski/mini.icons" },
 	opts = function()
-		local codecompanion_progress = require("lualine.component"):extend()
-
-		codecompanion_progress.processing = false
-		codecompanion_progress.spinner_index = 1
-
-		local spinner_symbols = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏", }
-		local spinner_symbols_len = 10
-
-		-- Initializer
-		function codecompanion_progress:init(options)
-			codecompanion_progress.super.init(self, options)
-
-			local group = vim.api.nvim_create_augroup("CodeCompanionHooks", {})
-
-			vim.api.nvim_create_autocmd({ "User" }, {
-				pattern = "CodeCompanionRequest*",
-				group = group,
-				callback = function(request)
-					if request.match == "CodeCompanionRequestStarted" then
-						self.processing = true
-					elseif request.match == "CodeCompanionRequestFinished" then
-						self.processing = false
-					end
-				end,
-			})
-		end
-
-		-- Function that runs every time statusline is updated
-		function codecompanion_progress:update_status()
-			if self.processing then
-				self.spinner_index = (self.spinner_index % spinner_symbols_len) + 1
-				return spinner_symbols[self.spinner_index]
-			else
-				return nil
-			end
-		end
 
 		local utils = require("core.utils")
 		local copilot_colors = {
@@ -448,20 +412,8 @@ local lualine_new = {
 			end,
 		}
 
-		local lsp_progress_status = {
-			function()
-				-- invoke `progress` here.
-				return require("lsp-progress").progress()
-			end,
-		}
-
-		-- listen lsp-progress event and refresh lualine
-		vim.api.nvim_create_augroup("lualine_augroup", { clear = true })
-		vim.api.nvim_create_autocmd("User", {
-			group = "lualine_augroup",
-			pattern = "LspProgressStatusUpdated",
-			callback = require("lualine").refresh,
-		})
+		local ai_assistant_status = require("plugins.lualine-component.ai-assistant")
+		local lsp_progress_status = require("plugins.lualine-component.lsp-progress")
 
 		return {
 			options = {
@@ -482,9 +434,9 @@ local lualine_new = {
 			sections = {
 				lualine_a = { git_branch, { "diff" } },
 				lualine_b = { mode_statues },
-				lualine_c = { diagnostics, lsp_icon, lsp_progress_status },
+				lualine_c = { diagnostics, lsp_progress_status },
 				lualine_x = { copilot_status },
-				lualine_y = { codecompanion_progress, "progress", "encoding", "fileformat", "filetype" },
+				lualine_y = { ai_assistant_status, "progress", "encoding", "fileformat", "filetype" },
 			},
 		}
 	end,

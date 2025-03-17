@@ -11,6 +11,45 @@ local codecompanion = {
 		"nvim-treesitter/nvim-treesitter",
 		"echasnovski/mini.diff",
 	},
+
+	keys = {
+		{
+			"<leader>ac",
+			function()
+				local mode = vim.fn.mode()
+				if mode == "v" or mode == "V" or mode == "" then
+					-- Visual mode: Use '<,'> range to pass the selection
+					vim.cmd("'<,'>CodeCompanionChat")
+				else
+					-- Normal mode: Just open chat
+					vim.cmd("CodeCompanionChat")
+				end
+			end,
+			mode = { "n", "v" },
+			desc = "Start AI chat with selection",
+		},
+		{
+			"<leader>aa",
+			function()
+				local mode = vim.fn.mode()
+				if mode == "v" or mode == "V" or mode == "" then
+					-- Visual mode: Use '<,'> range to pass the selection
+					vim.cmd("'<,'>CodeCompanionAction")
+				else
+					-- Normal mode: Just open action panel
+					vim.cmd("CodeCompanionAction")
+				end
+			end,
+			mode = { "n", "v" },
+			desc = "Start AI action with selection",
+		},
+		{
+			"<leader>aw",
+			"<cmd>CodeCompanionChat Toggle<CR>",
+			mode = { "n", "v" },
+			desc = "Open the latest chat buffer",
+		},
+	},
 	opts = {
 		language = "Chinese",
 		adapters = {
@@ -34,11 +73,11 @@ local codecompanion = {
 		-- prompt_library = {},
 		strategies = {
 			inline = {
-				adapter = "copilot" ,
+				adapter = "copilot",
 				keymaps = {
 					accept_change = {
 						modes = { n = "ca" },
-							description = "Accept the suggested change",
+						description = "Accept the suggested change",
 						reject_change = {
 							modes = { n = "cr" },
 							description = "Reject the suggested change",
@@ -74,9 +113,9 @@ local codecompanion = {
 						end,
 					},
 					["cmd_runner"] = {
-					  opts = {
-						requires_approval = true,
-					  },
+						opts = {
+							requires_approval = true,
+						},
 					},
 				},
 			},
