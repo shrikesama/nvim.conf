@@ -1,6 +1,10 @@
 local toggleterm = {
 	"akinsho/toggleterm.nvim",
 	version = "*",
+	lazy = true,
+	keys = {
+		{ "<Leader>sf", "<cmd>ToggleTerm direction=float<CR>", desc = "open terminal float" },
+	},
 	config = function()
 		function _G.set_terminal_keymaps()
 			local opts = { noremap = true }
@@ -68,9 +72,6 @@ local toggleterm = {
 			},
 		})
 	end,
-	keys = {
-		{ "<Leader>at", "<cmd>ToggleTerm direction=float<CR>", desc = "terminal float" },
-	},
 }
 
 return { toggleterm }

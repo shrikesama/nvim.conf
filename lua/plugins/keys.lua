@@ -13,7 +13,24 @@ local whichKey = {
 }
 
 local legendary = {
-	"mrjones2014/legendary.nvim"
+	"mrjones2014/legendary.nvim",
+	priority = 10000,
+	lazy = false,
+	opts = {
+		extension = {
+			lazy_nvim = {
+				auto_register = true,
+			},
+			which_key = {
+				auto_register = false,
+				mappings = {},
+				opts = {},
+				do_binding = true,
+				use_groups = true,
+			},
+			nvim_tree = true,
+		},
+	},
 }
 
 return { whichKey, legendary }

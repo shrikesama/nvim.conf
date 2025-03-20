@@ -9,6 +9,9 @@ local overseer = {
 			},
 		},
 	},
+	keys = {
+
+	},
 	init = function()
 		require("legendary").commands({
 			{

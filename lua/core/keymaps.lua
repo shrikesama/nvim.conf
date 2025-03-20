@@ -22,9 +22,6 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights" })
 -- keymap.set("n", "<leader>tp", "<cmd>tabp<CR>", { desc = "Go to previous tab" }) --  go to previous tab
 -- keymap.set("n", "<leader>tf", "<cmd>tabnew %<CR>", { desc = "Open current buffer in new tab" }) --  move current buffer to new tab
 --
--- terminal
-keymap.set("t", "<Leader><ESC>", "<C-\\><C-n>", { noremap = true, desc = "terminal turn into normal mode" })
-
 -- buffer
 keymap.set("n", "<leader>bd", "<cmd>bd<CR>", { desc = "Close buffer" }) -- close buffer
 keymap.set("n", "<leader>bn", "<cmd>bn<CR>", { desc = "Go to next buffer" }) -- go to next buffer

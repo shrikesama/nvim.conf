@@ -52,6 +52,15 @@ local comment = {
 local formatting = {
 	"stevearc/conform.nvim",
 	event = { "BufReadPre", "BufNewFile" },
+	keys = {
+		{ "<leader>mp", function()
+			require("conform").format({
+				lsp_fallback = true,
+				async = false,
+				timeout_ms = 1000,
+			})
+		end, mode = { "n", "v" }, desc = "Format file or range (in visual mode)" }
+	},
 	config = function()
 		local conform = require("conform")
 
@@ -78,14 +87,6 @@ local formatting = {
 				timeout_ms = 1000,
 			},
 		})
-
-		vim.keymap.set({ "n", "v" }, "<leader>mp", function()
-			conform.format({
-				lsp_fallback = true,
-				async = false,
-				timeout_ms = 1000,
-			})
-		end, { desc = "Format file or range (in visual mode)" })
 	end,
 }
 
@@ -101,19 +102,12 @@ local indent_blankline = {
 local substitue = {
 	"gbprod/substitute.nvim",
 	event = { "BufReadPre", "BufNewFile" },
-	config = function()
-		local substitute = require("substitute")
-
-		substitute.setup()
-
-		-- set keymaps
-		local keymap = vim.keymap -- for conciseness
-
-		keymap.set("n", "s", substitute.operator, { desc = "Substitute with motion" })
-		keymap.set("n", "ss", substitute.line, { desc = "Substitute line" })
-		keymap.set("n", "S", substitute.eol, { desc = "Substitute to end of line" })
-		keymap.set("x", "s", substitute.visual, { desc = "Substitute in visual mode" })
-	end,
+	keys = {
+		{ "s", function() require("substitute").operator() end, mode = "n", desc = "Substitute with motion" },
+		{ "ss", function() require("substitute").line() end, mode = "n", desc = "Substitute line" },
+		{ "S", function() require("substitute").eol() end, mode = "n", desc = "Substitute to end of line" },
+		{ "s", function() require("substitute").visual() end, mode = "x", desc = "Substitute in visual mode" },
+	},
 }
 
 local surround = {
@@ -123,4 +117,86 @@ local surround = {
 	config = true,
 }
 
-return { surround, substitue, autopair, comment, formatting, indent_blankline }
+
+local sleuth = {
+	"tpope/vim-sleuth", -- Automatically detects which indents should be used in the current buffer
+}
+
+local todo = {
+	"folke/todo-comments.nvim",
+	event = { "BufReadPre", "BufNewFile" },
+	dependencies = { "nvim-lua/plenary.nvim" },
+	keys = {
+		{ "]t", function() todo_comments.jump_next() end, desc = "Next todo comment" },
+		{ "[t", function() todo_comments.jump_prev() end, desc = "Previous todo comment" },
+	},
+}
+
+
+local nvim_cmp = {
+	"hrsh7th/nvim-cmp",
+	event = "InsertEnter",
+	dependencies = {
+		"hrsh7th/cmp-buffer", -- source for text in buffer
+		"hrsh7th/cmp-path", -- source for file system paths
+		{
+			"L3MON4D3/LuaSnip",
+			-- follow latest release.
+			version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
+			-- install jsregexp (optional!).
+			-- build = "make install_jsregexp",
+		},
+		"saadparwaiz1/cmp_luasnip", -- for autocompletion
+		"rafamadriz/friendly-snippets", -- useful snippets
+		"onsails/lspkind.nvim", -- vs-code like pictograms
+	},
+
+	config = function()
+		local cmp = require("cmp")
+
+		local luasnip = require("luasnip")
+
+		local lspkind = require("lspkind")
+
+		-- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
+		require("luasnip.loaders.from_vscode").lazy_load()
+
+		cmp.setup({
+			completion = {
+				completeopt = "menu,menuone,preview,noselect",
+			},
+			snippet = { -- configure how nvim-cmp interacts with snippet engine
+				expand = function(args)
+					luasnip.lsp_expand(args.body)
+				end,
+			},
+			mapping = cmp.mapping.preset.insert({
+				["<C-k>"] = cmp.mapping.select_prev_item(), -- previous suggestion
+				["<C-j>"] = cmp.mapping.select_next_item(), -- next suggestion
+				["<C-b>"] = cmp.mapping.scroll_docs(-4),
+				["<C-f>"] = cmp.mapping.scroll_docs(4),
+				["<C-Space>"] = cmp.mapping.complete(), -- show completion suggestions
+				["<C-e>"] = cmp.mapping.abort(), -- close completion window
+				["<Tab>"] = cmp.mapping.confirm({ select = false }),
+			}),
+			-- sources for autocompletion
+			sources = cmp.config.sources({
+				{ name = "nvim_lsp" },
+				{ name = "luasnip" }, -- snippets
+				{ name = "buffer" }, -- text within current buffer
+
+				{ name = "path" }, -- file system paths
+			}),
+
+			-- configure lspkind for vs-code like pictograms in completion menu
+			formatting = {
+				format = lspkind.cmp_format({
+					maxwidth = 50,
+					ellipsis_char = "...",
+				}),
+			},
+		})
+	end,
+}
+
+return { nvim_cmp, todo, sleuth, surround, substitue, autopair, comment, formatting, indent_blankline }

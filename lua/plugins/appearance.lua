@@ -1,16 +1,3 @@
-local theme_1 = {
-	"https://github.com/navarasu/onedark.nvim",
-	lazy = false,
-	priority = 1000,
-	config = function()
-		local onedark = require("onedark")
-		onedark.setup({
-			style = "darker",
-		})
-		vim.cmd.colorscheme("onedark")
-	end,
-}
-
 local theme = {
 	"scottmckendry/cyberdream.nvim",
 	lazy = false,
@@ -167,52 +154,52 @@ local lualine = {
 	end,
 }
 
-local lsp_progress = {
-	"linrongbin16/lsp-progress.nvim",
-	config = function()
-		require("lsp-progress").setup({
-			series_format = function(title, message, percentage, done)
-				local builder = {}
-				local has_title = false
-				local has_message = false
-				if title and title ~= "" then
-					table.insert(builder, title)
-					has_title = true
-				end
-				if message and message ~= "" then
-					table.insert(builder, message)
-					has_message = true
-				end
-				if percentage and (has_title or has_message) then
-					table.insert(builder, string.format("(%.0f%%%%)", percentage))
-				end
-				if done and (has_title or has_message) then
-					table.insert(builder, "- done")
-				end
-				-- return table.concat(builder, " ")
-				return { msg = table.concat(builder, " "), done = done }
-			end,
-			client_format = function(client_name, spinner, series_messages)
-				if #series_messages == 0 then
-					return nil
-				end
-				local builder = {}
-				local done = true
-				for _, series in ipairs(series_messages) do
-					if not series.done then
-						done = false
-					end
-					table.insert(builder, series.msg)
-				end
-				if done then
-					-- replace the check mark once done
-					spinner = "%#LspProgressMessageCompleted#✓%*"
-				end
-				return "[" .. client_name .. "] " .. spinner .. " " .. table.concat(builder, ", ")
-			end,
-		})
-	end,
-}
+-- local lsp_progress = {
+-- 	"linrongbin16/lsp-progress.nvim",
+-- 	config = function()
+-- 		require("lsp-progress").setup({
+-- 			series_format = function(title, message, percentage, done)
+-- 				local builder = {}
+-- 				local has_title = false
+-- 				local has_message = false
+-- 				if title and title ~= "" then
+-- 					table.insert(builder, title)
+-- 					has_title = true
+-- 				end
+-- 				if message and message ~= "" then
+-- 					table.insert(builder, message)
+-- 					has_message = true
+-- 				end
+-- 				if percentage and (has_title or has_message) then
+-- 					table.insert(builder, string.format("(%.0f%%%%)", percentage))
+-- 				end
+-- 				if done and (has_title or has_message) then
+-- 					table.insert(builder, "- done")
+-- 				end
+-- 				-- return table.concat(builder, " ")
+-- 				return { msg = table.concat(builder, " "), done = done }
+-- 			end,
+-- 			client_format = function(client_name, spinner, series_messages)
+-- 				if #series_messages == 0 then
+-- 					return nil
+-- 				end
+-- 				local builder = {}
+-- 				local done = true
+-- 				for _, series in ipairs(series_messages) do
+-- 					if not series.done then
+-- 						done = false
+-- 					end
+-- 					table.insert(builder, series.msg)
+-- 				end
+-- 				if done then
+-- 					-- replace the check mark once done
+-- 					spinner = "%#LspProgressMessageCompleted#✓%*"
+-- 				end
+-- 				return "[" .. client_name .. "] " .. spinner .. " " .. table.concat(builder, ", ")
+-- 			end,
+-- 		})
+-- 	end,
+-- }
 
 local lualine_new = {
 	"nvim-lualine/lualine.nvim",
@@ -435,11 +422,16 @@ local lualine_new = {
 				lualine_a = { git_branch, { "diff" } },
 				lualine_b = { mode_statues },
 				lualine_c = { diagnostics, lsp_progress_status },
-				lualine_x = { copilot_status },
-				lualine_y = { ai_assistant_status, "progress", "encoding", "fileformat", "filetype" },
+				lualine_x = { copilot_status, ai_assistant_status },
+				lualine_y = { "progress", "encoding", "fileformat", "filetype" },
 			},
 		}
 	end,
 }
 
-return { theme, nvim_navic, notice, lsp_progress, lualine_new }
+local dressing = {
+  "stevearc/dressing.nvim",
+  event = "VeryLazy",
+}
+
+return { theme, nvim_navic, notice, lsp_progress, lualine_new, dressing }
