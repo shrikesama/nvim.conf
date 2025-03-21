@@ -97,114 +97,10 @@ local nvim_navic = {
 -- lualine setting
 local lualine = {
 	"nvim-lualine/lualine.nvim",
+	event = "VeryLazy",
 	dependencies = {
 		"nvim-tree/nvim-web-devicons",
-		"olimorris/codecompanion.nvim",
 	},
-	config = function()
-		local lualine = require("lualine")
-		--- local lazy_status = require("lazy.status") -- to configure lazy pending updates count
-		local buffer_status = {
-			"buffers",
-			show_filename_only = true, -- Shows shortened relative path when set to false.
-			hide_filename_extension = true, -- Hide filename extension when set to true.
-			show_modified_status = true, -- Shows indicator when the buffer is modified.
-
-			mode = 4, -- 0: Shows buffer name
-			-- 1: Shows buffer index
-			-- 2: Shows buffer name + buffer index
-			-- 3: Shows buffer number
-			-- 4: Shows buffer name + buffer number
-
-			max_length = vim.o.columns * 2 / 3, -- Maximum width of buffers component,
-			-- it can also be a function that returns
-			-- the value of `max_length` dynamically.
-		}
-
-		local window_status = {
-			"windows",
-			mod = 2,
-		}
-
-		local tabs_status = {
-			"tabs",
-			tab_max_length = 40, -- Maximum width of each tab. The content will be shorten dynamically (example: apple/orange -> a/orange)
-			max_length = vim.o.columns / 3, -- Maximum width of tabs component.
-
-			path = 0, -- 0: just shows the filename
-			-- 1: shows the relative path and shorten $HOME to ~
-			-- 2: shows the full path
-			-- 3: shows the full path and shorten $HOME to ~
-		}
-
-		-- configure lualine with modified theme
-		lualine.setup({
-			options = {
-				theme = "auto",
-			},
-			tabline = {
-				lualine_a = { buffer_status },
-				lualine_y = { window_status },
-				lualine_z = { tabs_status },
-			},
-			sections = {
-				lualine_x = { "copilot", "encoding", "fileformat", "filetype" },
-			},
-		})
-	end,
-}
-
--- local lsp_progress = {
--- 	"linrongbin16/lsp-progress.nvim",
--- 	config = function()
--- 		require("lsp-progress").setup({
--- 			series_format = function(title, message, percentage, done)
--- 				local builder = {}
--- 				local has_title = false
--- 				local has_message = false
--- 				if title and title ~= "" then
--- 					table.insert(builder, title)
--- 					has_title = true
--- 				end
--- 				if message and message ~= "" then
--- 					table.insert(builder, message)
--- 					has_message = true
--- 				end
--- 				if percentage and (has_title or has_message) then
--- 					table.insert(builder, string.format("(%.0f%%%%)", percentage))
--- 				end
--- 				if done and (has_title or has_message) then
--- 					table.insert(builder, "- done")
--- 				end
--- 				-- return table.concat(builder, " ")
--- 				return { msg = table.concat(builder, " "), done = done }
--- 			end,
--- 			client_format = function(client_name, spinner, series_messages)
--- 				if #series_messages == 0 then
--- 					return nil
--- 				end
--- 				local builder = {}
--- 				local done = true
--- 				for _, series in ipairs(series_messages) do
--- 					if not series.done then
--- 						done = false
--- 					end
--- 					table.insert(builder, series.msg)
--- 				end
--- 				if done then
--- 					-- replace the check mark once done
--- 					spinner = "%#LspProgressMessageCompleted#✓%*"
--- 				end
--- 				return "[" .. client_name .. "] " .. spinner .. " " .. table.concat(builder, ", ")
--- 			end,
--- 		})
--- 	end,
--- }
-
-local lualine_new = {
-	"nvim-lualine/lualine.nvim",
-	event = "VeryLazy",
-	dependencies = { "echasnovski/mini.icons" },
 	opts = function()
 
 		local utils = require("core.utils")
@@ -362,45 +258,23 @@ local lualine_new = {
 			color = utils.get_hlgroup("Comment", nil),
 		}
 
-		local notice_section = {
-			---@diagnostic disable: undefined-field
-			require("noice").api.status.mode.get,
-			cond = function()
-				local ignore = {
-					"-- INSERT --",
-					"-- TERMINAL --",
-					"-- VISUAL --",
-					"-- VISUAL LINE --",
-					"-- VISUAL BLOCK --",
-				}
-				local mode = require("noice").api.status.mode.get()
-				return require("noice").api.status.mode.has() and not vim.tbl_contains(ignore, mode)
-			end,
-			color = utils.get_hlgroup("Comment"),
-			---@diagnostic enable: undefined-field
-		}
-
-		local copilot_status = {
-			function()
-				local icon = " "
-				local status = require("copilot.api").status.data
-				return icon .. (status.message or "")
-			end,
-			cond = function()
-				local ok, clients = pcall(vim.lsp.get_clients, { name = "copilot", bufnr = 0 })
-				return ok and #clients > 0
-			end,
-			color = function()
-				if not package.loaded["copilot"] then
-					return
-				end
-				local status = require("copilot.api").status.data
-				return copilot_colors[status.status] or copilot_colors[""]
-			end,
-		}
-
-		local ai_assistant_status = require("plugins.lualine-component.ai-assistant")
-		local lsp_progress_status = require("plugins.lualine-component.lsp-progress")
+		-- local notice_section = {
+		-- 	---@diagnostic disable: undefined-field
+		-- 	require("noice").api.status.mode.get,
+		-- 	cond = function()
+		-- 		local ignore = {
+		-- 			"-- INSERT --",
+		-- 			"-- TERMINAL --",
+		-- 			"-- VISUAL --",
+		-- 			"-- VISUAL LINE --",
+		-- 			"-- VISUAL BLOCK --",
+		-- 		}
+		-- 		local mode = require("noice").api.status.mode.get()
+		-- 		return require("noice").api.status.mode.has() and not vim.tbl_contains(ignore, mode)
+		-- 	end,
+		-- 	color = utils.get_hlgroup("Comment"),
+		-- 	---@diagnostic enable: undefined-field
+		-- }
 
 		return {
 			options = {
@@ -422,7 +296,8 @@ local lualine_new = {
 				lualine_a = { git_branch, { "diff" } },
 				lualine_b = { mode_statues },
 				lualine_c = { diagnostics, lsp_progress_status },
-				lualine_x = { copilot_status, ai_assistant_status },
+				lualine_c = { diagnostics },
+				lualine_x = { copilot_status },
 				lualine_y = { "progress", "encoding", "fileformat", "filetype" },
 			},
 		}
@@ -434,4 +309,5 @@ local dressing = {
   event = "VeryLazy",
 }
 
-return { theme, nvim_navic, notice, lsp_progress, lualine_new, dressing }
+-- return { theme, nvim_navic, notice, lualine, dressing }
+return { theme, nvim_navic, lualine, dressing }
