@@ -1,3 +1,80 @@
+local lsp_keymaps = {
+	{ mode = "n", key = "gR", action = "<cmd>Telescope lsp_references<CR>", desc = "Show LSP references" },
+	{ mode = "n", key = "gD", action = vim.lsp.buf.declaration, desc = "Go to declaration" },
+	{ mode = "n", key = "gd", action = "<cmd>Telescope lsp_definitions<CR>", desc = "Show LSP definitions" },
+	{ mode = "n", key = "gi", action = "<cmd>Telescope lsp_implementations<CR>", desc = "Show LSP implementations" },
+	{ mode = "n", key = "gt", action = "<cmd>Telescope lsp_type_definitions<CR>", desc = "Show LSP type definitions" },
+	{ mode = { "n", "v" }, key = "<leader>ca", action = vim.lsp.buf.code_action, desc = "See available code actions" },
+	{ mode = "n", key = "<leader>rn", action = vim.lsp.buf.rename, desc = "Smart rename" },
+	{
+		mode = "n",
+		key = "<leader>D",
+		action = "<cmd>Telescope diagnostics bufnr=0<CR>",
+		desc = "Show buffer diagnostics",
+	},
+	{ mode = "n", key = "<leader>d", action = vim.diagnostic.open_float, desc = "Show line diagnostics" },
+	{ mode = "n", key = "[d", action = vim.diagnostic.goto_prev, desc = "Go to previous diagnostic" },
+	{ mode = "n", key = "]d", action = vim.diagnostic.goto_next, desc = "Go to next diagnostic" },
+	{ mode = "n", key = "K", action = vim.lsp.buf.hover, desc = "Show documentation for what is under cursor" },
+	{ mode = "n", key = "<leader>rs", action = ":LspRestart<CR>", desc = "Restart LSP" },
+}
+
+local languagePluginConfig = {
+	-- Web/React Development
+    web = {
+        treesitter = { "html", "css", "javascript", "typescript", "tsx", "json" },
+        formatter = {
+            prettier = {
+                filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "css", "html", "json" },
+            }
+        },
+        linter = {
+            eslint_d = {
+                filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
+            },
+        },
+        lsp = {
+            html = {
+                filetypes = { "html" },
+            },
+            cssls = {
+                filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
+            },
+            "tailwindcss",
+            "tsserver",
+            emmet_ls = {
+                filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
+            },
+        }
+    },
+
+	-- Lua/Neovim Development
+	lua = {
+        treesitter = { "lua", "vim", "vimdoc" },
+        formatter = {stylua = {
+            filetypes = { "lua" },
+        } },
+        linter = { luac = {
+            filetypes = { "lua" },
+        } },
+        lsp = {
+            lua_ls = {
+                filetypes = { "lua" },
+                settings = {
+                    Lua = {
+                        diagnostics = {
+                            globals = { "vim" },
+                        },
+                        completion = {
+                            callSnippet = "Replace",
+                        },
+                    },
+                },
+            }
+        },
+	},
+}
+
 local treesitter = {
 	"nvim-treesitter/nvim-treesitter",
 	event = { "BufReadPre", "BufNewFile" },
@@ -6,61 +83,53 @@ local treesitter = {
 	dependencies = {
 		"windwp/nvim-ts-autotag",
 	},
-	opts = {
-		highlight = {
-			enable = true,
-		},
-		-- Install parsers synchronously (only applied to `ensure_installed`)
-		sync_install = false,
-
-		-- Automatically install missing parsers when entering buffer
-		-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-		auto_install = true,
-
-		-- enable indentation
-		indent = { enable = true },
-
-		-- enable autotagging (w/ nvim-ts-autotag plugin)
-		autotag = { enable = true },
-		-- ensure these language parsers are installed
-		ensure_installed = {
-			"bash",
-			"c",
-			"cmake",
-			"c_sharp",
-			"cpp",
-			"css",
-			"go",
-			"html",
-			"javascript",
-			"json",
-			"lua",
-			"markdown",
-			"markdown_inline",
-			"python",
-			"query",
-			"rust",
-			"typescript",
-			"typst",
-			"tsx",
-			"vim",
-			"vimdoc",
-			"dockerfile",
-			"bash",
-		},
-		incremental_selection = {
-			enable = true,
-			keymaps = {
-				init_selection = "<C-space>",
-				node_incremental = "<C-space>",
-				scope_incremental = false,
-				node_decremental = "<bs>",
+	opts = function()
+		local ensure_installed = {}
+		-- Extract treesitter parsers from language configs
+		for _, lang_config in pairs(languagePluginConfig) do
+			if lang_config.treesitter then
+				for k, v in ipairs(lang_config.treesitter) do
+                    if type(k) == "number" then
+                        table.insert(ensure_installed, v)
+                    else
+                        table.insert(ensure_installed, k)
+                    end
+                end
+            end
+        end
+		return {
+			highlight = {
+				enable = true,
 			},
-		},
-	},
+			-- Install parsers synchronously (only applied to `ensure_installed`)
+			sync_install = false,
+			-- ensure these language parsers are installed
+			ensure_installed = ensure_installed,
+
+			-- Automatically install missing parsers when entering buffer
+			-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
+			auto_install = true,
+
+			-- enable indentation
+			indent = { enable = true },
+
+			-- enable autotagging (w/ nvim-ts-autotag plugin)
+			autotag = { enable = true },
+			incremental_selection = {
+				enable = true,
+				keymaps = {
+					init_selection = "<C-space>",
+					node_incremental = "<C-space>",
+					scope_incremental = false,
+					node_decremental = "<bs>",
+				},
+			},
+		}
+	end,
 }
 
-local nvim_cmp = {
+-- autocompletion
+local completion = {
 	"hrsh7th/nvim-cmp",
 	event = "InsertEnter",
 	dependencies = {
@@ -80,11 +149,8 @@ local nvim_cmp = {
 
 	opts = function()
 		local cmp = require("cmp")
-
 		local luasnip = require("luasnip")
-
 		local lspkind = require("lspkind")
-
 		-- loads vscode style snippets from installed plugins (e.g. friendly-snippets)
 		require("luasnip.loaders.from_vscode").lazy_load()
 
@@ -125,9 +191,37 @@ local nvim_cmp = {
 	end,
 }
 
+local mason = {
+    "williamboman/mason.nvim",
+    opts = {
+        ui = {
+            icons = {
+                package_installed = "✓",
+                package_pending = "➜",
+                package_uninstalled = "✗",
+            },
+        },
+    }
+}
+
+local mason_install_package = function(package_list)
+    local mason_registry = require("mason-registry")
+    for _, server_name in ipairs(package_list) do
+        if not mason_registry.is_installed(server_name) and 
+            mason_registry.has_package(server_name) then
+            vim.defer_fn(function()
+                mason_registry.get_package(server_name):install()
+            end, 0)
+        end
+    end
+end
+
 -- linter
-local nvim_lint = {
+local linter = {
 	"mfussenegger/nvim-lint",
+    dependencies = {
+        mason,
+    },
 	event = { "BufReadPre", "BufNewFile" },
 	keys = {
 		{
@@ -148,21 +242,53 @@ local nvim_lint = {
 				require("lint").try_lint()
 			end,
 		})
-		lint.linters_by_ft = {
-			lua = { "luac" },
-			javascript = { "eslint_d" },
-			typescript = { "eslint_d" },
-			javascriptreact = { "eslint_d" },
-			typescriptreact = { "eslint_d" },
-			svelte = { "eslint_d" },
-			python = { "pylint" },
-		}
+        -- extract linters from language configs
+		local linter_conf = {}
+        local needed_linter = {}
+		-- Extract treesitter parsers from language configs
+		for _, lang_config in pairs(languagePluginConfig) do
+			if lang_config.linter then
+				for k, v in ipairs(lang_config.linter) do
+                    if type(k) == "number" then
+                        table.insert(needed_linter, v)
+                    else
+                        table.insert(linter_conf, v)
+                        table.insert(needed_linter, k)
+                    end
+                end
+            end
+        end
+        mason_install_package(needed_linter)
+
+        -- transform linter config to nvim-lint format
+        -- filetype: linter with { languages } => language with { linters }
+
+        --    eslint_d = {
+        --        filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
+        --    },
+
+        local linters_by_ft = {}
+        for linter, conf in ipairs(linter_conf) do
+            if conf.filetypes then
+                for _, ft in ipairs(conf.filetypes) do
+                    if not linters_by_ft[ft] then
+                        linters_by_ft[ft] = {}
+                    end
+                    table.insert(linters_by_ft[ft], linter)
+                end
+            end
+        end
+
+		lint.linters_by_ft = linters_by_ft
 	end,
 }
 
 -- format
-local formatting = {
+local formatter = {
 	"stevearc/conform.nvim",
+    dependencies = {
+        mason,
+    },
 	event = { "BufReadPre", "BufNewFile" },
 	keys = {
 		{
@@ -179,154 +305,78 @@ local formatting = {
 		},
 	},
 	config = function()
-		local conform = require("conform")
+        local needed_formatter = {}
+        -- Extract treesitter parsers from language configs
+        for _, lang_config in pairs(languagePluginConfig) do
+            if lang_config.formatter then
+                for k, v in ipairs(lang_config.formatter) do
+                    if type(k) == "number" then
+                        table.insert(needed_formatter, v)
+                    else
+                        table.insert(needed_formatter, k)
+                    end
+                end
+            end
+        end
+        mason_install_package(needed_formatter)
 
+        -- transform formatter config to conform format
+        -- filetype: formatter with { languages } => language with { formatters }
+        --    prettier = {
+        --        filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "css", "html", "json" },
+        --    },
+        local formatter_by_ft = {}
+        for _, lang_conf in pairs(languagePluginConfig) do
+            if lang_conf.formatter then
+                for formatter, conf in ipairs(lang_conf.formatter) do
+                    if conf.filetypes then
+                        for _, ft in ipairs(conf.filetypes) do
+                            if not formatter_by_ft[ft] then
+                                formatter_by_ft[ft] = {}
+                            end
+                            table.insert(formatter_by_ft[ft], formatter)
+                        end
+                    end
+                end
+            end
+        end
+
+		local conform = require("conform")
 		conform.setup({
-			formatters_by_ft = {
-				javascript = { "prettier" },
-				typescript = { "prettier" },
-				javascriptreact = { "prettier" },
-				typescriptreact = { "prettier" },
-				svelte = { "prettier" },
-				css = { "prettier" },
-				html = { "prettier" },
-				json = { "prettier" },
-				yaml = { "prettier" },
-				markdown = { "prettier" },
-				graphql = { "prettier" },
-				liquid = { "prettier" },
-				lua = { "stylua" },
-				python = { "isort", "black" },
-			},
+			formatters_by_ft = formatter_by_ft,
+            default_format_opts = {
+                lsp_format = "fallback",
+            },
 			format_on_save = {
 				lsp_fallback = true,
-				async = true,
 				timeout_ms = 1000,
 			},
+            format_after_save = {
+                enabled = true,
+                timeout_ms = 1000,
+            },
 		})
 	end,
 }
 
-local trouble = {
-	"folke/trouble.nvim",
-	dependencies = {
-		"nvim-tree/nvim-web-devicons",
-		"folke/todo-comments.nvim",
-	},
-	opts = {
-		focus = true,
-	},
-	cmd = "Trouble",
-	keys = {
-		{ "<leader>xx", "<cmd>Trouble toggle <CR>", desc = "Open/close trouble list" },
-		{ "<leader>xw", "<cmd>Trouble diagnostics toggle<CR>", desc = "Open trouble workspace diagnostics" },
-		{
-			"<leader>xd",
-			"<cmd>Trouble diagnostics toggle filter.buf=0<CR>",
-			desc = "Open trouble document diagnostics",
-		},
-		{ "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", desc = "Open trouble quickfix list" },
-		{ "<leader>xl", "<cmd>Trouble loclist toggle<CR>", desc = "Open trouble location list" },
-		{ "<leader>xt", "<cmd>Trouble todo toggle<CR>", desc = "Open todos in trouble" },
-	},
-}
-
-local lsp_keymaps = {
-	{ mode = "n", key = "gR", action = "<cmd>Telescope lsp_references<CR>", desc = "Show LSP references" },
-	{ mode = "n", key = "gD", action = vim.lsp.buf.declaration, desc = "Go to declaration" },
-	{ mode = "n", key = "gd", action = "<cmd>Telescope lsp_definitions<CR>", desc = "Show LSP definitions" },
-	{ mode = "n", key = "gi", action = "<cmd>Telescope lsp_implementations<CR>", desc = "Show LSP implementations" },
-	{ mode = "n", key = "gt", action = "<cmd>Telescope lsp_type_definitions<CR>", desc = "Show LSP type definitions" },
-	{ mode = { "n", "v" }, key = "<leader>ca", action = vim.lsp.buf.code_action, desc = "See available code actions" },
-	{ mode = "n", key = "<leader>rn", action = vim.lsp.buf.rename, desc = "Smart rename" },
-	{
-		mode = "n",
-		key = "<leader>D",
-		action = "<cmd>Telescope diagnostics bufnr=0<CR>",
-		desc = "Show buffer diagnostics",
-	},
-	{ mode = "n", key = "<leader>d", action = vim.diagnostic.open_float, desc = "Show line diagnostics" },
-	{ mode = "n", key = "[d", action = vim.diagnostic.goto_prev, desc = "Go to previous diagnostic" },
-	{ mode = "n", key = "]d", action = vim.diagnostic.goto_next, desc = "Go to next diagnostic" },
-	{ mode = "n", key = "K", action = vim.lsp.buf.hover, desc = "Show documentation for what is under cursor" },
-	{ mode = "n", key = "<leader>rs", action = ":LspRestart<CR>", desc = "Restart LSP" },
-}
-
-local custom_lspserver_conf = {
-	["svelte"] = {
-		on_attach = function(client, bufnr)
-			vim.api.nvim_create_autocmd("BufWritePost", {
-				pattern = { "*.js", "*.ts" },
-				callback = function(ctx)
-					-- Here use ctx.match instead of ctx.file
-					client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
-				end,
-			})
-		end,
-	},
-
-	["graphql"] = {
-		filetypes = { "graphql", "gql", "svelte", "typescriptreact", "javascriptreact" },
-	},
-	["emmet_ls"] = {
-		filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less", "svelte" },
-	},
-
-	["lua_ls"] = {
-		settings = {
-			Lua = {
-				-- make the language server recognize "vim" global
-				diagnostics = {
-					globals = { "vim" },
-				},
-				completion = {
-					callSnippet = "Replace",
-				},
-			},
-		},
-	},
-}
-
-local lspconfig = {
+-- language server protocol
+local lsp = {
 	"neovim/nvim-lspconfig",
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = {
 		{ "antosha417/nvim-lsp-file-operations", config = true },
 		{ "folke/neodev.nvim", opts = {} },
-		"williamboman/mason-lspconfig.nvim",
-		"williamboman/mason.nvim",
-		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		{ "williamboman/mason-lspconfig.nvim", -- mason-lspconfig.nvim closes some gaps that exist between "mason.nvim" and "lspconfig".
+            dependencies = { mason }
+        },
 		"hrsh7th/cmp-nvim-lsp",
 	},
 	config = function()
-		local mason_tool_installer = require("mason-tool-installer")
-		mason_tool_installer.setup({
-			ensure_installed = {
-				"prettier", -- prettier formatter
-				"stylua", -- lua formatter
-				"isort", -- python formatter
-				"black", -- python formatter
-				"pylint",
-				"eslint_d",
-			},
-		})
-
 		local mason_lspconfig = require("mason-lspconfig")
 		mason_lspconfig.setup({
-			-- list of servers for mason to install
+            -- Whether servers that are set up (via lspconfig) should be automatically installed if they're not already installed.
+            -- This setting has no relation with the `ensure_installed` setting.
 			automatic_installation = true,
-			ensure_installed = {
-				"html",
-				"cssls",
-				"tailwindcss",
-				"svelte",
-				"lua_ls",
-				"graphql",
-				"emmet_ls",
-				"prismals",
-				"pyright",
-				"clangd",
-			},
 		})
 
 		-- used to enable autocompletion (assign to every lsp server config)
@@ -341,21 +391,46 @@ local lspconfig = {
 			end,
 		}
 
-		for server_name, config in pairs(custom_lspserver_conf) do
-			lsp_handlers[server_name] = function()
-				-- Add any other default options here
-				local server_opts = {
-					capabilities = capabilities,
-				}
+        -- extract lsp servers from language configs
+        local needed_lsp_servers = {}
+        for _, lang_config in pairs(languagePluginConfig) do
+            if lang_config.lsp then
+                for k, v in ipairs(lang_config.lsp) do
+                    if type(k) == "number" then
+                        table.insert(needed_lsp_servers, v)
+                    else
+                        table.insert(needed_lsp_servers, k)
+                    end
+                end
+            end
+        end
+        mason_install_package(needed_lsp_servers)
 
-				-- Merge custom config with server_opts
-				for key, value in pairs(config) do
-					server_opts[key] = value
-				end
+        -- transform lsp config to lspconfig format
+        -- filetype: lsp with { languages } => language with { lsps }
+        --    html = {
+        --        filetypes = { "html" },
+        --    },
 
-				-- Setup the server with the merged options
-				lspconfig[server_name].setup(server_opts)
-			end
+		for _, lang_config in pairs(languagePluginConfig) do
+            for lsp_name, custom_conf in ipairs(lang_config.lsp) do
+                if type(lsp_name) == "string" then
+                    lsp_handlers[lsp_name] = function()
+                        -- Add any other default options here
+                        local server_opts = {
+                            capabilities = capabilities,
+                        }
+
+                        -- Merge custom config with server_opts
+                        for key, value in pairs(custom_conf) do
+                            server_opts[key] = value
+                        end
+
+                        -- Setup the server with the merged options
+                        lspconfig[lsp_name].setup(server_opts)
+                    end
+                end
+            end
 		end
 		mason_lspconfig.setup_handlers(lsp_handlers)
 
@@ -463,18 +538,29 @@ local lsp_progress = {
 	end,
 }
 
-local mason = {
-	"williamboman/mason.nvim",
-	event = { "BufReadPre", "BufNewFile" },
+local trouble = {
+	"folke/trouble.nvim",
+	dependencies = {
+		"nvim-tree/nvim-web-devicons",
+		"folke/todo-comments.nvim",
+	},
 	opts = {
-		ui = {
-			icons = {
-				package_installed = "✓",
-				package_pending = "➜",
-				package_uninstalled = "✗",
-			},
+		focus = true,
+	},
+	cmd = "Trouble",
+	keys = {
+		{ "<leader>xx", "<cmd>Trouble toggle <CR>", desc = "Open/close trouble list" },
+		{ "<leader>xw", "<cmd>Trouble diagnostics toggle<CR>", desc = "Open trouble workspace diagnostics" },
+		{
+			"<leader>xd",
+			"<cmd>Trouble diagnostics toggle filter.buf=0<CR>",
+			desc = "Open trouble document diagnostics",
 		},
+		{ "<leader>xq", "<cmd>Trouble quickfix toggle<CR>", desc = "Open trouble quickfix list" },
+		{ "<leader>xl", "<cmd>Trouble loclist toggle<CR>", desc = "Open trouble location list" },
+		{ "<leader>xt", "<cmd>Trouble todo toggle<CR>", desc = "Open todos in trouble" },
 	},
 }
 
-return { mason, lspconfig, lsp_progress, treesitter, nvim_cmp, nvim_lint, formatting, trouble }
+
+return { treesitter, linter, formatter, lsp, completion, lsp_progress, trouble }
