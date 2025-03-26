@@ -5,7 +5,7 @@ local toggleterm = {
 	keys = {
 		{ "<Leader>sf", "<cmd>ToggleTerm direction=float<CR>", desc = "open terminal float" },
 	},
-	config = function()
+	opts = function()
 		function _G.set_terminal_keymaps()
 			local opts = { noremap = true }
 			vim.api.nvim_buf_set_keymap(0, "t", "<esc>", [[<C-\><C-n>]], opts)
@@ -17,8 +17,7 @@ local toggleterm = {
 
 		vim.cmd("autocmd! TermOpen term://*toggleterm#* lua set_terminal_keymaps()")
 
-		local toggleterm = require("toggleterm")
-		toggleterm.setup({
+		return {
 			-- size can be a number or function which is passed the current terminal
 			size = function(term)
 				if term.direction == "horizontal" then
@@ -48,7 +47,7 @@ local toggleterm = {
 				},
 			},
 			shade_filetypes = {},
-			shade_terminals = false,
+			shade_terminals = true,
 			shading_factor = 1, -- the degree by which to darken to terminal colour, default: 1 for dark backgrounds, 3 for light
 			start_in_insert = true,
 			insert_mappings = true, -- whether or not the open mapping applies in insert mode
@@ -58,19 +57,15 @@ local toggleterm = {
 			shell = vim.o.shell, -- change the default shell
 			-- This field is only relevant if direction is set to 'float'
 			float_opts = {
-				-- The border key is *almost* the same as 'nvim_win_open'
-				-- see :h nvim_win_open for details on borders however
-				-- the 'curved' border is a custom border type
-				-- not natively supported but implemented in this plugin.
 				border = "curved", -- single/double/shadow/curved
 				width = math.floor(0.7 * vim.fn.winwidth(0)),
 				height = math.floor(0.8 * vim.fn.winheight(0)),
-				winblend = 4,
+				winblend = 0,
 			},
 			winbar = {
 				enabled = true,
 			},
-		})
+		}
 	end,
 }
 

@@ -18,12 +18,14 @@ local lazygit = {
 		{ "<leader>g", "<cmd>LazyGit<cr>", desc = "Open lazy git" },
 	},
 
-	opts = {
-		lazygit_floating_window_winblend = 0, -- 透明度
-		lazygit_floating_window_scaling_factor = 0.9, -- 缩放比例
-		lazygit_floating_window_use_plenary = 1, -- 是否使用 plenary.nvim 来管理浮动窗口
-		lazygit_use_custom_config_file_path = 0,
-	},
+	config = function()
+        require("lazygit").setup({
+            lazygit_floating_window_winblend = 0, -- 透明度
+            lazygit_floating_window_scaling_factor = 0.9, -- 缩放比例
+            lazygit_floating_window_use_plenary = 1, -- 是否使用 plenary.nvim 来管理浮动窗口
+            lazygit_use_custom_config_file_path = 0,
+        })
+    end,
 }
 
 local gitsigns = {

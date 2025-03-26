@@ -289,15 +289,13 @@ local lualine = {
 				lualine_y = { window_status },
 				lualine_z = { tabs_status, tab_counter },
 			},
-			-- winbar = {
-			-- 	lualine_b = { navic },
-			-- },
+			winbar = {
+				lualine_b = { navic },
+			},
 			sections = {
 				lualine_a = { git_branch, { "diff" } },
 				lualine_b = { mode_statues },
-				lualine_c = { diagnostics, lsp_progress_status },
 				lualine_c = { diagnostics },
-				lualine_x = { copilot_status },
 				lualine_y = { "progress", "encoding", "fileformat", "filetype" },
 			},
 		}

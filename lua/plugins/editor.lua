@@ -100,7 +100,6 @@ local substitue = {
 local surround = {
 	"kylechui/nvim-surround",
 	event = { "BufReadPre", "BufNewFile" },
-	version = "*", -- Use for stability; omit to use `main` branch for the latest features
 	config = true,
 }
 
@@ -112,6 +111,7 @@ local todo = {
 	"folke/todo-comments.nvim",
 	event = { "BufReadPre", "BufNewFile" },
 	dependencies = { "nvim-lua/plenary.nvim" },
+    -- todo: refactor to integrate with telescope
 	keys = {
 		{
 			"]t",

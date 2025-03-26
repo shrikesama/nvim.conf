@@ -8,7 +8,6 @@ local telescope_config = {
             build = vim.fn.has("win32") == 1 and "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release" or "make",
         },
         "nvim-tree/nvim-web-devicons",
-        "folke/todo-comments.nvim",
     },
     keys = {
         { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Fuzzy find files in cwd" },
@@ -27,6 +26,7 @@ local telescope_config = {
         -- local trouble_telescope = require("trouble.sources.telescope")
 
         -- or create your custom action
+        -- TODO: it's not working here
         local custom_actions = transform_mod({
             open_trouble_qflist = function(prompt_bufnr)
                 trouble.toggle("quickfix")
@@ -52,4 +52,3 @@ local telescope_config = {
 }
 
 return { telescope_config }
--- return {}
