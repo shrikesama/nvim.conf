@@ -20,6 +20,35 @@ local lsp_keymaps = {
 }
 
 local languagePluginConfig = {
+    base = {
+        treesitter = { "toml", "yaml", "json" },
+        formatter = {
+            prettier = {
+                filetypes = { "json" },
+            },
+            yamlfmt = {
+                env = {
+                    YAMLFIX_SEQUENCE_STYLE = "block_style",
+                },
+            },
+            "taplo"
+        },
+        linter = {
+            "yamllint",
+            "jsonlint",
+        },
+        lsp = {
+            ["json-lsp"] = {
+                mason_lspconfig_name = "jsonls"
+            },
+            ["yaml-language-server"] = {
+                mason_lspconfig_name = "yamlls"
+            },
+            taplo = {
+                filetypes = { "toml" },
+            }
+        }
+    },
     -- Web/React Development
     web = {
         treesitter = { "html", "css", "javascript", "typescript", "tsx", "json" },
@@ -34,15 +63,21 @@ local languagePluginConfig = {
             },
         },
         lsp = {
-            html = {
-                filetypes = { "html" },
+            ["html-lsp"] = {
+                mason_lspconfig_name = "html"
             },
-            cssls = {
+            ["tailwindcss-language-server"] = {
+                mason_lspconfig_name = "tailwindcss",
+            },
+            ["typescript-language-server"] = {
+                mason_lspconfig_name = "ts_ls",
+            },
+            ["css-lsp"] = {
+                mason_lspconfig_name = "cssls",
                 filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
             },
-            "tailwindcss",
-            "tsserver",
-            emmet_ls = {
+            ["emmet-ls"] = {
+                mason_lspconfig_name = "emmet_ls",
                 filetypes = { "html", "typescriptreact", "javascriptreact", "css", "sass", "scss", "less" },
             },
         }
@@ -51,18 +86,11 @@ local languagePluginConfig = {
     -- Lua/Neovim Development
     lua = {
         treesitter = { "lua", "vim", "vimdoc" },
-        formatter = {
-            stylua = {
-                filetypes = { "lua" },
-            }
-        },
-        linter = {
-            luac = {
-                filetypes = { "lua" },
-            }
-        },
+        formatter = { "stylua" },
+        linter = { "luac" },
         lsp = {
-            lua_ls = {
+            ["lua-language-server"] = {
+                mason_lspconfig_name = "lua_ls",
                 filetypes = { "lua" },
                 settings = {
                     Lua = {
@@ -81,14 +109,20 @@ local languagePluginConfig = {
     -- solidity development
     solidity = {
         treesitter = { "solidity" },
-        formatter = {
-            "solc",
-        },
+        -- formatter = {
+        --     ["vscode-solidity-server"] = {
+        --         filetypes = { "solidity" }
+        --     }
+        -- },
         linter = {
-            "solhint"
+            solhint = {
+                filetypes = { "solidity" }
+            }
         },
         lsp = {
-            "solc",
+            ["nomicfoundation-solidity-language-server"] = {
+                mason_lspconfig_name = "solidity_ls_nomicfoundation"
+            }
         },
     },
 }
@@ -106,7 +140,7 @@ local treesitter = {
         -- Extract treesitter parsers from language configs
         for _, lang_config in pairs(languagePluginConfig) do
             if lang_config.treesitter then
-                for k, v in ipairs(lang_config.treesitter) do
+                for k, v in pairs(lang_config.treesitter) do
                     if type(k) == "number" then
                         table.insert(ensure_installed, v)
                     else
@@ -224,7 +258,7 @@ local mason = {
 
 local mason_install_package = function(package_list)
     local mason_registry = require("mason-registry")
-    for _, server_name in ipairs(package_list) do
+    for _, server_name in pairs(package_list) do
         if not mason_registry.is_installed(server_name) and
             mason_registry.has_package(server_name) then
             vim.defer_fn(function()
@@ -260,43 +294,48 @@ local linter = {
                 require("lint").try_lint()
             end,
         })
-        -- extract linters from language configs
-        local linter_conf = {}
-        local needed_linter = {}
-        -- Extract treesitter parsers from language configs
-        for _, lang_config in pairs(languagePluginConfig) do
-            if lang_config.linter then
-                for k, v in ipairs(lang_config.linter) do
-                    if type(k) == "number" then
-                        table.insert(needed_linter, v)
-                    else
-                        table.insert(linter_conf, v)
-                        table.insert(needed_linter, k)
-                    end
-                end
-            end
-        end
-        mason_install_package(needed_linter)
 
+        local lint_progress = function()
+            local linters = lint.get_running()
+            if #linters == 0 then
+                return "󰦕"
+            end
+            return "󱉶 " .. table.concat(linters, ", ")
+        end
+
+        vim.api.nvim_create_user_command("LintProgress", function()
+            print(lint_progress())
+        end, {})
+
+        -- extract linters from language configs
+        local needed_linter = {}
+        local linters_by_ft = {}
+        -- Extract treesitter parsers from language configs
         -- transform linter config to nvim-lint format
         -- filetype: linter with { languages } => language with { linters }
 
         --    eslint_d = {
         --        filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact" },
         --    },
-
-        local linters_by_ft = {}
-        for linter, conf in ipairs(linter_conf) do
-            if conf.filetypes then
-                for _, ft in ipairs(conf.filetypes) do
-                    if not linters_by_ft[ft] then
-                        linters_by_ft[ft] = {}
+        for _, lang_config in pairs(languagePluginConfig) do
+            if lang_config.linter then
+                for k, v in pairs(lang_config.linter) do
+                    if type(k) == "number" then
+                        table.insert(needed_linter, v)
+                    else
+                        table.insert(needed_linter, k)
+                        if v.filetypes then
+                            for _, ft in pairs(v.filetypes) do
+                                if linters_by_ft[ft] then
+                                    table.insert(linters_by_ft[ft], k)
+                                end
+                            end
+                        end
                     end
-                    table.insert(linters_by_ft[ft], linter)
                 end
             end
         end
-
+        mason_install_package(needed_linter)
         lint.linters_by_ft = linters_by_ft
     end,
 }
@@ -324,40 +363,34 @@ local formatter = {
     },
     config = function()
         local needed_formatter = {}
+        local formatter_by_ft = {}
         -- Extract treesitter parsers from language configs
-        for _, lang_config in pairs(languagePluginConfig) do
-            if lang_config.formatter then
-                for k, v in ipairs(lang_config.formatter) do
-                    if type(k) == "number" then
-                        table.insert(needed_formatter, v)
-                    else
-                        table.insert(needed_formatter, k)
-                    end
-                end
-            end
-        end
-        mason_install_package(needed_formatter)
-
         -- transform formatter config to conform format
         -- filetype: formatter with { languages } => language with { formatters }
         --    prettier = {
         --        filetypes = { "javascript", "typescript", "javascriptreact", "typescriptreact", "css", "html", "json" },
         --    },
-        local formatter_by_ft = {}
-        for _, lang_conf in pairs(languagePluginConfig) do
-            if lang_conf.formatter then
-                for formatter, conf in ipairs(lang_conf.formatter) do
-                    if conf.filetypes then
-                        for _, ft in ipairs(conf.filetypes) do
-                            if not formatter_by_ft[ft] then
-                                formatter_by_ft[ft] = {}
+
+        for _, lang_config in pairs(languagePluginConfig) do
+            if lang_config.formatter then
+                for formatter, conf in pairs(lang_config.formatter) do
+                    if type(formatter) == "number" then
+                        table.insert(needed_formatter, conf)
+                    else
+                        table.insert(needed_formatter, formatter)
+                        if conf.filetypes then
+                            for _, ft in pairs(conf.filetypes) do
+                                if not formatter_by_ft[ft] then
+                                    formatter_by_ft[ft] = {}
+                                end
+                                table.insert(formatter_by_ft[ft], formatter)
                             end
-                            table.insert(formatter_by_ft[ft], formatter)
                         end
                     end
                 end
             end
         end
+        mason_install_package(needed_formatter)
 
         local conform = require("conform")
         conform.setup({
@@ -395,6 +428,7 @@ local lsp = {
         mason_lspconfig.setup({
             -- Whether servers that are set up (via lspconfig) should be automatically installed if they're not already installed.
             -- This setting has no relation with the `ensure_installed` setting.
+
             automatic_installation = true,
         })
 
@@ -411,54 +445,57 @@ local lsp = {
         }
 
         -- extract lsp servers from language configs
-        local needed_lsp_servers = {}
-        for _, lang_config in pairs(languagePluginConfig) do
-            if lang_config.lsp then
-                for k, v in ipairs(lang_config.lsp) do
-                    if type(k) == "number" then
-                        table.insert(needed_lsp_servers, v)
-                    else
-                        table.insert(needed_lsp_servers, k)
-                    end
-                end
-            end
-        end
-        mason_install_package(needed_lsp_servers)
 
         -- transform lsp config to lspconfig format
         -- filetype: lsp with { languages } => language with { lsps }
         --    html = {
         --        filetypes = { "html" },
         --    },
-
+        local needed_lsp_servers = {}
         for _, lang_config in pairs(languagePluginConfig) do
-            for lsp_name, custom_conf in ipairs(lang_config.lsp) do
-                if type(lsp_name) == "string" then
-                    lsp_handlers[lsp_name] = function()
-                        -- Add any other default options here
-                        local server_opts = {
-                            capabilities = capabilities,
-                        }
+            if lang_config.lsp then
+                for lsp_name, lsp_custom_conf in pairs(lang_config.lsp) do
+                    if type(lsp_name) == "number" then
+                        table.insert(needed_lsp_servers, lsp_custom_conf)
+                    else
+                        table.insert(needed_lsp_servers, lsp_name)
 
-                        -- Merge custom config with server_opts
-                        for key, value in pairs(custom_conf) do
-                            server_opts[key] = value
+                        local lsp_name_in_lspconfig = lsp_name
+                        if lsp_custom_conf.mason_lspconfig_name then
+                            lsp_name_in_lspconfig = lsp_custom_conf.mason_lspconfig_name
                         end
 
-                        -- Setup the server with the merged options
-                        lspconfig[lsp_name].setup(server_opts)
+                        lsp_handlers[lsp_name_in_lspconfig] = function()
+                            -- Add any other default options here
+                            local server_opts = {
+                                capabilities = capabilities,
+                            }
+
+                            -- Merge custom config with server_opts
+                            for key, value in pairs(lsp_custom_conf) do
+                                if key ~= "mason_lspconfig_name" then
+                                    server_opts[key] = value
+                                end
+                            end
+
+                            -- Setup the server with the merged options
+                            lspconfig[lsp_name_in_lspconfig].setup(server_opts)
+                        end
                     end
                 end
             end
         end
+        vim.inspect("lsp config")
+        vim.inspect(lsp_handlers)
         mason_lspconfig.setup_handlers(lsp_handlers)
+        mason_install_package(needed_lsp_servers)
 
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("UserLspConfig", {}),
             callback = function(ev)
                 -- Apply all keymaps from the table
                 local keymap = vim.keymap -- for conciseness
-                for _, mapping in ipairs(lsp_keymaps) do
+                for _, mapping in pairs(lsp_keymaps) do
                     local opts = { buffer = ev.buf, silent = true, desc = mapping.desc }
                     keymap.set(mapping.mode, mapping.key, mapping.action, opts)
                 end
