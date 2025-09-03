@@ -1,6 +1,6 @@
 local renderMD = {
 	"MeanderingProgrammer/render-markdown.nvim",
-	ft = { "markdown", "codecompanion" },
+	ft = { "markdown", "codecompanion", "Avante" },
 	opts = {
 		code = {
 			-- A list of language names for which background highlighting will be disabled.

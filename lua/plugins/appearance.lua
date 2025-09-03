@@ -102,7 +102,6 @@ local lualine = {
 		"nvim-tree/nvim-web-devicons",
 	},
 	opts = function()
-
 		local utils = require("core.utils")
 		local copilot_colors = {
 			[""] = utils.get_hlgroup("Comment"),
@@ -126,7 +125,7 @@ local lualine = {
 			hide_filename_extension = true, -- Hide filename extension when set to true.
 			show_modified_status = true, -- Shows indicator when the buffer is modified.
 
-			mode = 4, -- 0: Shows buffer name
+			mode = 4,              -- 0: Shows buffer name
 			-- 1: Shows buffer index
 			-- 2: Shows buffer name + buffer index
 			-- 3: Shows buffer number
@@ -143,10 +142,10 @@ local lualine = {
 
 		local tabs_status = {
 			"tabs",
-			tab_max_length = 40, -- Maximum width of each tab. The content will be shorten dynamically (example: apple/orange -> a/orange)
+			tab_max_length = 40,   -- Maximum width of each tab. The content will be shorten dynamically (example: apple/orange -> a/orange)
 			max_length = vim.o.columns / 3, -- Maximum width of tabs component.
 
-			path = 0, -- 0: just shows the filename
+			path = 0,              -- 0: just shows the filename
 			-- 1: shows the relative path and shorten $HOME to ~
 			-- 2: shows the full path
 			-- 3: shows the full path and shorten $HOME to ~
@@ -258,24 +257,6 @@ local lualine = {
 			color = utils.get_hlgroup("Comment", nil),
 		}
 
-		-- local notice_section = {
-		-- 	---@diagnostic disable: undefined-field
-		-- 	require("noice").api.status.mode.get,
-		-- 	cond = function()
-		-- 		local ignore = {
-		-- 			"-- INSERT --",
-		-- 			"-- TERMINAL --",
-		-- 			"-- VISUAL --",
-		-- 			"-- VISUAL LINE --",
-		-- 			"-- VISUAL BLOCK --",
-		-- 		}
-		-- 		local mode = require("noice").api.status.mode.get()
-		-- 		return require("noice").api.status.mode.has() and not vim.tbl_contains(ignore, mode)
-		-- 	end,
-		-- 	color = utils.get_hlgroup("Comment"),
-		-- 	---@diagnostic enable: undefined-field
-		-- }
-
 		return {
 			options = {
 				component_separators = { left = " ", right = " " },
@@ -303,8 +284,8 @@ local lualine = {
 }
 
 local dressing = {
-  "stevearc/dressing.nvim",
-  event = "VeryLazy",
+	"stevearc/dressing.nvim",
+	event = "VeryLazy",
 }
 
 -- return { theme, nvim_navic, notice, lualine, dressing }

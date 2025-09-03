@@ -3,7 +3,7 @@ local toggleterm = {
 	version = "*",
 	lazy = true,
 	keys = {
-		{ "<Leader>sf", "<cmd>ToggleTerm direction=float<CR>", desc = "open terminal float" },
+		{ "<Leader>tf", "<cmd>ToggleTerm direction=float<CR>", desc = "open terminal float" },
 	},
 	opts = function()
 		function _G.set_terminal_keymaps()

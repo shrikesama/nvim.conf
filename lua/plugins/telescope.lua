@@ -5,17 +5,18 @@ local telescope_config = {
         "nvim-lua/plenary.nvim",
         {
             "nvim-telescope/telescope-fzf-native.nvim",
-            build = vim.fn.has("win32") == 1 and "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release" or "make",
+            build = vim.fn.has("win32") == 1 and
+                "cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release" or "make",
         },
         "nvim-tree/nvim-web-devicons",
     },
     keys = {
-        { "<leader>ff", "<cmd>Telescope find_files<cr>", desc = "Fuzzy find files in cwd" },
-        { "<leader>fr", "<cmd>Telescope oldfiles<cr>", desc = "Fuzzy find recent files in cwd" },
-        { "<leader>fs", "<cmd>Telescope live_grep<cr>", desc = "Find string in cwd" },
+        { "<leader>ff", "<cmd>Telescope find_files<cr>",  desc = "Fuzzy find files in cwd" },
+        { "<leader>fr", "<cmd>Telescope oldfiles<cr>",    desc = "Fuzzy find recent files in cwd" },
+        { "<leader>fs", "<cmd>Telescope live_grep<cr>",   desc = "Find string in cwd" },
         { "<leader>fc", "<cmd>Telescope grep_string<cr>", desc = "Find string under cursor in cwd" },
-        { "<leader>fb", "<cmd>Telescope buffers<cr>", desc = "Find buffers" },
-        { "<leader>ft", "<cmd>TodoTelescope<cr>", desc = "Find todos" },
+        { "<leader>fb", "<cmd>Telescope buffers<cr>",     desc = "Find buffers" },
+        { "<leader>ft", "<cmd>TodoTelescope<cr>",         desc = "Find todos" },
     },
     config = function()
         local telescope = require("telescope")
