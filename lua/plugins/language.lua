@@ -3,7 +3,7 @@ local lsp_keymaps = {
     { mode = "n",          key = "gD",         action = vim.lsp.buf.declaration,                   desc = "Go to declaration" },
     { mode = "n",          key = "gd",         action = "<cmd>Telescope lsp_definitions<CR>",      desc = "Show LSP definitions" },
     { mode = "n",          key = "gi",         action = "<cmd>Telescope lsp_implementations<CR>",  desc = "Show LSP implementations" },
-    { mode = "n",          key = "gt",         action = "<cmd>Telescope lsp_type_definitions<CR>", desc = "Show LSP type definitions" },
+    { mode = "n",          key = "gp",         action = "<cmd>Telescope lsp_type_definitions<CR>", desc = "Show LSP type definitions" },
     { mode = { "n", "v" }, key = "<leader>ca", action = vim.lsp.buf.code_action,                   desc = "See available code actions" },
     { mode = "n",          key = "<leader>rn", action = vim.lsp.buf.rename,                        desc = "Smart rename" },
     {
@@ -125,6 +125,41 @@ local languagePluginConfig = {
             }
         },
     },
+
+    -- rust development
+    rust = {
+        treesitter = { "rust", "toml" },
+
+        formatter = {
+            rustfmt = {
+                filetypes = { "rust" },
+            },
+        },
+
+        -- prefer rust-analyzer’s built-in checks; keep this only if you wire external linters
+        linter = {
+            clippy = {
+                filetypes = { "rust" },
+            },
+        },
+
+        lsp = {
+            rust_analyzer = {
+                mason_lspconfig_name = "rust_analyzer",
+                settings = {
+                    ["rust-analyzer"] = {
+                        cargo = { allFeatures = true },
+                        checkOnSave = { command = "clippy" },
+                        procMacro = { enable = true },
+                    },
+                },
+            },
+            -- optional: TOML for Cargo.toml
+            taplo = {
+                mason_lspconfig_name = "taplo",
+            },
+        },
+    }
 }
 
 local treesitter = {
@@ -361,71 +396,33 @@ local lsp = {
         "hrsh7th/cmp-nvim-lsp",
     },
     config = function()
-        local mason_lspconfig = require("mason-lspconfig")
-        mason_lspconfig.setup({
-            -- Whether servers that are set up (via lspconfig) should be automatically installed if they're not already installed.
-            -- This setting has no relation with the `ensure_installed` setting.
+        local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-            automatic_installation = true,
-        })
+        local ensure = {}
 
-        -- used to enable autocompletion (assign to every lsp server config)
-        local cmp_nvim_lsp = require("cmp_nvim_lsp")
-        local capabilities = cmp_nvim_lsp.default_capabilities()
-        local lspconfig = require("lspconfig")
-        local lsp_handlers = {
-            function(server_name)
-                lspconfig[server_name].setup({
-                    capabilities = capabilities,
-                })
-            end,
-        }
+        for _, lang in pairs(languagePluginConfig or {}) do
+            if not lang.lsp then goto CONTINUE end
+            for name, conf in pairs(lang.lsp) do
+                if type(name) == "number" then
+                    -- 仅字符串形式
+                    table.insert(ensure, conf)
+                else
+                    local server = conf.mason_lspconfig_name or name
+                    table.insert(ensure, server)
 
-        -- extract lsp servers from language configs
-
-        -- transform lsp config to lspconfig format
-        -- filetype: lsp with { languages } => language with { lsps }
-        --    html = {
-        --        filetypes = { "html" },
-        --    },
-        local needed_lsp_servers = {}
-        for _, lang_config in pairs(languagePluginConfig) do
-            if lang_config.lsp then
-                for lsp_name, lsp_custom_conf in pairs(lang_config.lsp) do
-                    if type(lsp_name) == "number" then
-                        table.insert(needed_lsp_servers, lsp_custom_conf)
-                    else
-                        table.insert(needed_lsp_servers, lsp_name)
-
-                        local lsp_name_in_lspconfig = lsp_name
-                        if lsp_custom_conf.mason_lspconfig_name then
-                            lsp_name_in_lspconfig = lsp_custom_conf.mason_lspconfig_name
-                        end
-
-                        lsp_handlers[lsp_name_in_lspconfig] = function()
-                            -- Add any other default options here
-                            local server_opts = {
-                                capabilities = capabilities,
-                            }
-
-                            -- Merge custom config with server_opts
-                            for key, value in pairs(lsp_custom_conf) do
-                                if key ~= "mason_lspconfig_name" then
-                                    server_opts[key] = value
-                                end
-                            end
-
-                            -- Setup the server with the merged options
-                            lspconfig[lsp_name_in_lspconfig].setup(server_opts)
-                        end
-                    end
+                    local cfg = vim.tbl_deep_extend("force", { capabilities = capabilities }, conf)
+                    cfg.mason_lspconfig_name = nil
+                    vim.lsp.config(server, cfg) -- 定义配置，启用时自动用到
                 end
             end
+            ::CONTINUE::
         end
-        vim.inspect("lsp config")
-        vim.inspect(lsp_handlers)
-        mason_lspconfig.setup_handlers(lsp_handlers)
-        mason_install_package(needed_lsp_servers)
+
+        require("mason").setup({})
+        require("mason-lspconfig").setup({
+            ensure_installed = ensure,
+            automatic_enable = true, -- 自动 vim.lsp.enable() 已安装的 server
+        })
 
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("UserLspConfig", {}),

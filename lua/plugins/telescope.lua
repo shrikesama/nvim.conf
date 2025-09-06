@@ -48,7 +48,11 @@ local telescope_config = {
             },
         })
 
-        telescope.load_extension("fzf")
+        -- 安全加载 fzf 扩展，如果失败则使用默认排序器
+        local has_fzf, _ = pcall(telescope.load_extension, "fzf")
+        if not has_fzf then
+          vim.notify("FZF extension not available, using default sorter", vim.log.levels.WARN)
+        end
     end,
 }
 
