@@ -1,50 +1,24 @@
 local M = {}
-
-local function relpath(file)
-    local uv = vim.loop
-    local real_file = (uv.fs_realpath(file) or file)
-    local cwd = vim.fn.getcwd(-1, -1)
-    local real_cwd = (uv.fs_realpath(cwd) or cwd)
-
-    local rel = vim.fn.fnamemodify(real_file, ":.")
-    if rel == real_file then
-        rel = vim.fn.fnamemodify(real_file, ":t")
-    end
-    return rel
-end
+local selection = require("utils.selection")
+local path = require("utils.path")
 
 function M.get_selected_location()
-    local buf = vim.api.nvim_get_current_buf()
-    local file_path = vim.api.nvim_buf_get_name(buf)
-    if file_path == "" then
-        vim.notify("No file associated with current buffer", vim.log.levels.WARN)
+    if not path.validate_current_file() then
         return
     end
 
-    local rel = relpath(file_path)
-
-    local mode = vim.api.nvim_get_mode().mode           -- 更可靠
-    local sline, eline
-    if mode == "v" or mode == "V" or mode == "\22" then -- \22 == <C-v>
-        local s = vim.fn.getpos("'<")
-        local e = vim.fn.getpos("'>")
-        sline, eline = s[2], e[2]
-        if sline > eline then sline, eline = eline, sline end
-    else
-        local cur = vim.api.nvim_win_get_cursor(0)
-        sline, eline = cur[1], cur[1]
-    end
-
-    local path_part = (rel == "." and "." or ("./" .. rel))
-    local location = (sline == eline)
-        and string.format("%s:%d", path_part, sline)
-        or string.format("%s:%d-%d", path_part, sline, eline)
+    local path_part = path.get_current_relative_path()
+    local range = selection.get_selection_range()
+    
+    local location = (range.start_line == range.end_line)
+        and string.format("%s:%d", path_part, range.start_line)
+        or string.format("%s:%d-%d", path_part, range.start_line, range.end_line)
 
     -- 尝试写系统剪贴板与备用选择缓冲区
     pcall(vim.fn.setreg, "+", location)
     pcall(vim.fn.setreg, "*", location)
 
-    if mode == "v" or mode == "V" or mode == "\22" then
+    if selection.is_visual_mode() then
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', false)
     end
 

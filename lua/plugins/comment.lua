@@ -5,9 +5,10 @@ local comment = {
         "JoosepAlviste/nvim-ts-context-commentstring",
     },
     config = function()
-        local C    = require("Comment")
-        local api  = require("Comment.api")
-        local tscc = require("ts_context_commentstring.integrations.comment_nvim")
+        local C         = require("Comment")
+        local api       = require("Comment.api")
+        local tscc      = require("ts_context_commentstring.integrations.comment_nvim")
+        local selection = require("utils.selection")
 
         C.setup({
             mappings = { basic = false, extra = false }, -- 关闭 gc/gco/gcO/gcA
@@ -19,10 +20,15 @@ local comment = {
 
         local map = vim.keymap.set
 
-        map("x", "<leader>cl", function() api.toggle.linewise("V") end,
-            { desc = "Toggle line comments for selection" })
-        map("x", "<leader>cb", function() api.toggle.blockwise("<C-v>") end,
-            { desc = "Toggle block comments for selection" })
+        map("x", "<leader>cl", function() 
+            local range = selection.get_selection_range()
+            api.toggle.linewise(range.mode) 
+        end, { desc = "Toggle line comments for selection" })
+        
+        map("x", "<leader>cb", function() 
+            local range = selection.get_selection_range()
+            api.toggle.blockwise(range.mode) 
+        end, { desc = "Toggle block comments for selection" })
 
         -- 带标签前缀助手
         local function tag(where, s)
