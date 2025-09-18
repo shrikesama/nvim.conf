@@ -1,63 +1,66 @@
-local nvim_tree = {
-	"nvim-tree/nvim-tree.lua",
-	dependencies = "nvim-tree/nvim-web-devicons",
-	config = function()
-		local nvimtree = require("nvim-tree")
+local neo_tree = {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+        "nvim-tree/nvim-web-devicons",
+        "MunifTanjim/nui.nvim",
+    },
+    config = function()
+        vim.g.neo_tree_remove_legacy_commands = 1
 
-		-- recommended settings from nvim-tree documentation
-		vim.g.loaded_netrw = 1
-		vim.g.loaded_netrwPlugin = 1
+        local neotree = require("neo-tree")
 
-		nvimtree.setup({
-			view = {
-				width = 30,
-				relativenumber = true,
-			},
-			-- change folder arrow icons
-			renderer = {
-				indent_markers = {
-					enable = true,
-				},
-				icons = {
-					glyphs = {
-						folder = {
-							arrow_closed = "", -- arrow when folder is closed
-							arrow_open = "", -- arrow when folder is open
-						},
-					},
-				},
-			},
-			-- disable window_picker for
-			-- explorer to work well with
-			-- window splits
-			actions = {
-				open_file = {
-					window_picker = {
-						enable = false,
-					},
-				},
-			},
-			filters = {
-				custom = { ".DS_Store" },
-			},
-			git = {
-				ignore = false,
-			},
-		})
+        neotree.setup({
+            close_if_last_window = true,
+            popup_border_style = "rounded",
+            window = {
+                position = "float",
+                reveal = true,
+                popup = {
+                    size = { height = "80%", width = "30%" },
+                    position = "50%",
+                },
+                mappings = {
+                    ["p"] = {
+                        "toggle_preview",
+                        config = {
+                            use_float = true,
+                            use_image_nvim = true,
+                            use_snacks_image = true,
+                            neo_tree_preview = 1,
+                        },
+                    },
+                    ["<C-h>"] = "focus_preview",
+                    ["<C-k>"] = { "scroll_preview", config = { direction = 10 } },
+                    ["<C-j>"] = { "scroll_preview", config = { direction = -10 } },
+                },
+            },
+            filesystem = {
 
-		-- set keymaps
-		local keymap = vim.keymap -- for conciseness
+                filtered_items = {
+                    visible = true, -- when true, they will just be displayed differently than normal items
+                },
+                bind_to_cwd = true,
+                follow_current_file = { enabled = true, leave_dirs_open = true },
+                use_libuv_file_watcher = true,
+            },
+            buffers = {
+                follow_current_file = { enabled = true },
+            },
+            git_status = {
+                window = {
+                    position = "float",
+                },
+            },
+        })
 
-		keymap.set("n", "<leader>ee", "<cmd>NvimTreeToggle<CR>", { desc = "Toggle file explorer" }) -- toggle file explorer
-		keymap.set(
-			"n",
-			"<leader>ef",
-			"<cmd>NvimTreeFindFileToggle<CR>",
-			{ desc = "Toggle file explorer on current file" }
-		) -- toggle file explorer on current file
-		keymap.set("n", "<leader>ec", "<cmd>NvimTreeCollapse<CR>", { desc = "Collapse file explorer" }) -- collapse file explorer
-		keymap.set("n", "<leader>er", "<cmd>NvimTreeRefresh<CR>", { desc = "Refresh file explorer" }) -- refresh file explorer
-	end,
+        local keymap = vim.keymap
+
+        keymap.set("n", "<leader>ee", "<cmd>Neotree toggle<CR>", { desc = "Toggle file explorer" })
+        keymap.set("n", "<leader>eb", "<cmd>Neotree buffers<CR>", { desc = "Toggle buffers explorer" })
+        keymap.set("n", "<leader>eg", "<cmd>Neotree git_status<CR>", { desc = "Toggle git status explorer" })
+    end,
 }
 
-return { nvim_tree }
+return { neo_tree }
